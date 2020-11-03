@@ -25,6 +25,10 @@ Current Memory Scheduling Policies:
        This scheduling policy behaves the same way as FRFCFS, except that it
        prioritizes row hits more than readiness. 
 
+5) ATLAS 
+
+6) BLISS
+
 You can select which scheduler you want to use by changing the value of 
 "type" variable on line number 74.
 
@@ -68,19 +72,21 @@ class Scheduler
 {
 public:
     Controller<T>* ctrl;
+    vector<double> totalAs, localAs;
+
 
     enum class Type {
-        FCFS, FRFCFS, FRFCFS_Cap, FRFCFS_PriorHit, MAX
-    } type = Type::FRFCFS_Cap; //Change this line to change scheduling policy
+        FCFS, FRFCFS, FRFCFS_Cap, FRFCFS_PriorHit, ATLAS, BLISS, MAX
+    } type = Type::ATLAS; //Change this line to change scheduling policy
 
     long cap = 16; //Change this line to change cap
 
-    Scheduler(Controller<T>* ctrl) : ctrl(ctrl) {}
+    Scheduler(Controller<T>* ctrl) : ctrl(ctrl), totalAs(16, 0), localAs(16, 0) {}
 
     list<Request>::iterator get_head(list<Request>& q)
     {
         // TODO make the decision at compile time
-        if (type != Type::FRFCFS_PriorHit) {
+        if (type != Type::FRFCFS_PriorHit || type != Type::ATLAS || type != Type::BLISS) {
             //If queue is empty, return end of queue
             if (!q.size())
                 return q.end();
@@ -101,7 +107,19 @@ public:
        //Else return based on FRFCFS_PriorHit Scheduling Policy
             auto head = q.begin();
             for (auto itr = next(q.begin(), 1); itr != q.end(); itr++) {
-                head = compare[int(Type::FRFCFS_PriorHit)](head, itr);
+                switch(type) {
+                    case Type::FRFCFS_PriorHit:
+                        head = compare[int(Type::FRFCFS_PriorHit)](head, itr);
+                        break;
+                    case Type::ATLAS:
+                        head = compare[int(Type::ATLAS)](head, itr);
+                        break;
+                    case Type::BLISS:
+                        head = compare[int(Type::BLISS)](head, itr);
+                        break;
+                    default:
+                        assert(false);
+                }
             }
 
             if (this->ctrl->is_ready(head) && this->ctrl->is_row_hit(head)) {
@@ -202,8 +220,36 @@ private:
             }
 
             if (req1->arrive <= req2->arrive) return req1;
-            return req2;}
-    };
+            return req2;},
+        //ATLAS
+        [this] (ReqIter req1, ReqIter req2) {
+            if (req1->arrive - this->ctrl->clk > 100000) return req1;
+            if (req2->arrive - this->ctrl->clk > 100000) return req2;
+            if (req1->coreid != req2 ->coreid) {
+                if (totalAs[req1->coreid] > totalAs[req2->coreid]) return req2;
+                return req1;
+            }
+            bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
+            bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
+            if (ready1 ^ ready2) {
+                if (ready1) return req1;
+                return req2;
+            }
+            if (req1->arrive <= req2->arrive) return req1;
+            return req2;
+        },
+        //BLISS
+        [this] (ReqIter req1, ReqIter req2) {
+            bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
+            bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
+            if (ready1 ^ ready2) {
+                if (ready1) return req1;
+                return req2;
+            }
+            if (req1->arrive <= req2->arrive) return req1;
+            return req2;
+        }
+     };
 };
 
 

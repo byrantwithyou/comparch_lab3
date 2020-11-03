@@ -332,6 +332,12 @@ public:
     void tick()
     {
         clk++;
+        if (clk % 10000000 == 0) {
+            for (int i = 0; i < this->scheduler->totalAs.size(); ++i) {
+                this->scheduler->totalAs[i] = 0.875 * this->scheduler->totalAs[i] + 0.125 * this->scheduler->localAs[i];
+                this->scheduler->localAs[i] = 0;
+            }
+        }
         req_queue_length_sum += readq.size() + writeq.size() + pending.size();
         read_req_queue_length_sum += readq.size() + pending.size();
         write_req_queue_length_sum += writeq.size();
@@ -390,6 +396,7 @@ public:
             }
             return;  // nothing more to be done this cycle
         }
+        ++this->scheduler->localAs[req->coreid];
 
         if (req->is_first_command) {
             req->is_first_command = false;
