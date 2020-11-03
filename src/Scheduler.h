@@ -73,15 +73,16 @@ class Scheduler
 public:
     Controller<T>* ctrl;
     vector<double> totalAs, localAs;
-
+    vector<int> blacklist;
+    int app_id, request_served;
 
     enum class Type {
         FCFS, FRFCFS, FRFCFS_Cap, FRFCFS_PriorHit, ATLAS, BLISS, MAX
-    } type = Type::ATLAS; //Change this line to change scheduling policy
+    } type = Type::BLISS; //Change this line to change scheduling policy
 
     long cap = 16; //Change this line to change cap
 
-    Scheduler(Controller<T>* ctrl) : ctrl(ctrl), totalAs(16, 0), localAs(16, 0) {}
+    Scheduler(Controller<T>* ctrl) : ctrl(ctrl), totalAs(16, 0), localAs(16, 0), blacklist(0), app_id(-1), request_served(0) {}
 
     list<Request>::iterator get_head(list<Request>& q)
     {
@@ -240,6 +241,12 @@ private:
         },
         //BLISS
         [this] (ReqIter req1, ReqIter req2) {
+            bool inblacklist1 = std::find(this->blacklist.begin(), this->blacklist.end(), req1->coreid) != this->blacklist.end();
+            bool inblacklist2 = std::find(this->blacklist.begin(), this->blacklist.end(), req2->coreid) != this->blacklist.end();
+            if (inblacklist1 ^ inblacklist2) {
+                if (inblacklist1) return req2;
+                return req1;
+            }
             bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
             bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
             if (ready1 ^ ready2) {

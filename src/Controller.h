@@ -338,6 +338,9 @@ public:
                 this->scheduler->localAs[i] = 0;
             }
         }
+        if (clk % 10000 == 0) {
+            this->scheduler->blacklist.resize(0);
+        }
         req_queue_length_sum += readq.size() + writeq.size() + pending.size();
         read_req_queue_length_sum += readq.size() + pending.size();
         write_req_queue_length_sum += writeq.size();
@@ -397,6 +400,16 @@ public:
             return;  // nothing more to be done this cycle
         }
         ++this->scheduler->localAs[req->coreid];
+        if (req->coreid == this->scheduler->app_id) {
+            ++this->scheduler->request_served;
+            if (this->scheduler->request_served > 4) {
+                this->scheduler->request_served = 0;
+                this->scheduler->blacklist.push_back(req->coreid);
+            }
+        } else {
+            this->scheduler->app_id = req->coreid;
+            this->scheduler->request_served = 0;
+        }
 
         if (req->is_first_command) {
             req->is_first_command = false;
