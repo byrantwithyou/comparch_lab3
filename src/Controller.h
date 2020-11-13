@@ -332,14 +332,21 @@ public:
     void tick()
     {
         clk++;
+        /* ATLAS and BLISS log */
+        for (int i = 0; i < pending.size(); ++i) {
+            if (!pending[i].is_first_command) {
+                ++scheduler->localAs[pending[i].coreid];
+            }
+        }
+        
         if (clk % 10000000 == 0) {
-            for (int i = 0; i < this->scheduler->totalAs.size(); ++i) {
-                this->scheduler->totalAs[i] = 0.875 * this->scheduler->totalAs[i] + 0.125 * this->scheduler->localAs[i];
-                this->scheduler->localAs[i] = 0;
+            for (int i = 0; i < scheduler->totalAs.size(); ++i) {
+                scheduler->totalAs[i] = 0.875 * scheduler->totalAs[i] + 0.125 * scheduler->localAs[i];
+                scheduler->localAs[i] = 0;
             }
         }
         if (clk % 10000 == 0) {
-            this->scheduler->blacklist.resize(0);
+            scheduler->blacklist.resize(0);
         }
         req_queue_length_sum += readq.size() + writeq.size() + pending.size();
         read_req_queue_length_sum += readq.size() + pending.size();
@@ -399,16 +406,15 @@ public:
             }
             return;  // nothing more to be done this cycle
         }
-        ++this->scheduler->localAs[req->coreid];
-        if (req->coreid == this->scheduler->app_id) {
-            ++this->scheduler->request_served;
-            if (this->scheduler->request_served > 4) {
-                this->scheduler->request_served = 0;
-                this->scheduler->blacklist.push_back(req->coreid);
+        if (req->coreid == scheduler->app_id) {
+            ++scheduler->request_served;
+            if (scheduler->request_served > 4) {
+                scheduler->request_served = 0;
+                scheduler->blacklist.push_back(req->coreid);
             }
         } else {
-            this->scheduler->app_id = req->coreid;
-            this->scheduler->request_served = 0;
+            scheduler->app_id = req->coreid;
+            scheduler->request_served = 0;
         }
 
         if (req->is_first_command) {
