@@ -85,7 +85,7 @@ public:
         ATLAS,
         BLISS,
         MAX
-    } type = Type::BLISS; //Change this line to change scheduling policy
+    } type = Type::ATLAS; //Change this line to change scheduling policy
 
     long cap = 16; //Change this line to change cap
 
@@ -246,18 +246,18 @@ private:
             return req2; },
         //ATLAS
         [this](ReqIter req1, ReqIter req2) {
-            if (req1->arrive - this->ctrl->clk > 100000)
+            bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
+            bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
+            if ((req1->arrive - this->ctrl->clk > 100000) && ready1)
                 return req1;
-            if (req2->arrive - this->ctrl->clk > 100000)
+            if ((req2->arrive - this->ctrl->clk > 100000) && ready2)
                 return req2;
             if (req1->coreid != req2->coreid)
             {
-                if (total_as[req1->coreid] > total_as[req2->coreid])
+                if ((total_as[req1->coreid] > total_as[req2->coreid]) && ready2)
                     return req2;
-                return req1;
+                if (ready1)return req1;
             }
-            bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
-            bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
             if (ready1 ^ ready2)
             {
                 if (ready1)
