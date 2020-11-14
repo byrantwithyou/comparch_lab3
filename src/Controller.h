@@ -332,22 +332,24 @@ public:
     void tick()
     {
         clk++;
-        /* ATLAS and BLISS log */
-        for (int i = 0; i < pending.size(); ++i) {
-            if (!pending[i].is_first_command) {
-                ++scheduler->localAs[pending[i].coreid];
+
+        //ATLAS implementation
+        for (int i = 0; i < scheduler->local_as.size(); ++i) {
+            scheduler->local_as[i] += scheduler->cur_serving_banks[i];
+        }
+
+        if (clk % 10000000 == 0) {
+            for (int i = 0; i < scheduler->total_as.size(); ++i) {
+                scheduler->total_as[i] = 0.875 * scheduler->total_as[i] + 0.125 * scheduler->local_as[i];
+                scheduler->local_as[i] = 0;
             }
         }
         
-        if (clk % 10000000 == 0) {
-            for (int i = 0; i < scheduler->totalAs.size(); ++i) {
-                scheduler->totalAs[i] = 0.875 * scheduler->totalAs[i] + 0.125 * scheduler->localAs[i];
-                scheduler->localAs[i] = 0;
-            }
-        }
+        //BLISS implementation
         if (clk % 10000 == 0) {
             scheduler->blacklist.resize(0);
         }
+
         req_queue_length_sum += readq.size() + writeq.size() + pending.size();
         read_req_queue_length_sum += readq.size() + pending.size();
         write_req_queue_length_sum += writeq.size();
@@ -358,6 +360,7 @@ public:
             if (req.depart <= clk) {
                 if (req.depart - req.arrive > 1) { // this request really accessed a row
                   read_latency_sum += req.depart - req.arrive;
+                  --scheduler->cur_serving_banks[req.coreid];
                   channel->update_serving_requests(
                       req.addr_vec.data(), -1, clk);
                 }
@@ -421,6 +424,7 @@ public:
             req->is_first_command = false;
             int coreid = req->coreid;
             if (req->type == Request::Type::READ || req->type == Request::Type::WRITE) {
+              ++scheduler->cur_serving_banks[coreid];
               channel->update_serving_requests(req->addr_vec.data(), 1, clk);
             }
             int tx = (channel->spec->prefetch_size * channel->spec->channel_width / 8);
@@ -474,6 +478,7 @@ public:
         }
 
         if (req->type == Request::Type::WRITE) {
+            --scheduler->cur_serving_banks[req->coreid];
             channel->update_serving_requests(req->addr_vec.data(), -1, clk);
             req->callback(*req);
         }

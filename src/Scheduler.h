@@ -72,8 +72,8 @@ class Scheduler
 {
 public:
     Controller<T>* ctrl;
-    vector<double> totalAs, localAs;
-    vector<int> blacklist;
+    vector<int> blacklist, cur_serving_banks;
+    vector<double> total_as, local_as;
     int app_id, request_served;
 
     enum class Type {
@@ -82,7 +82,8 @@ public:
 
     long cap = 16; //Change this line to change cap
 
-    Scheduler(Controller<T>* ctrl) : ctrl(ctrl), totalAs(16, 0), localAs(16, 0), blacklist(0), app_id(-1), request_served(0) {}
+    Scheduler(Controller<T>* ctrl) : 
+        ctrl(ctrl), blacklist(0), cur_serving_banks(16, 0), total_as(16, 0), local_as(16, 0), app_id(-1), request_served(0) {}
 
     list<Request>::iterator get_head(list<Request>& q)
     {
@@ -227,7 +228,7 @@ private:
             if (req1->arrive - this->ctrl->clk > 100000) return req1;
             if (req2->arrive - this->ctrl->clk > 100000) return req2;
             if (req1->coreid != req2 ->coreid) {
-                if (totalAs[req1->coreid] > totalAs[req2->coreid]) return req2;
+                if (total_as[req1->coreid] > total_as[req2->coreid]) return req2;
                 return req1;
             }
             bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
