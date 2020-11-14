@@ -50,6 +50,10 @@ Processor::Processor(const Config& configs,
             .precision(0)
             ;
   cpu_cycles = 0;
+  inst_throughput.name("instruction_throughput")
+                 .desc("The instruction throughupt of all the cores.")
+                 .precision(6)
+                 ;
 }
 
 void Processor::tick() {
@@ -65,6 +69,7 @@ void Processor::tick() {
     Core* core = cores[i].get();
     core->tick();
   }
+  inst_throughput = get_insts() / cpu_cycles.value();
 }
 
 void Processor::receive(Request& req) {

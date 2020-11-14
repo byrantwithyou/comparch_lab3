@@ -109,8 +109,8 @@ private:
 
     Cache* first_level_cache = nullptr;
 
-    ScalarStat memory_access_cycles;
     ScalarStat cpu_inst;
+    ScalarStat memory_access_cycles;
     MemoryBase& memory;
 };
 
@@ -144,6 +144,7 @@ public:
     Cache llc;
 
     ScalarStat cpu_cycles;
+    ScalarStat inst_throughput;
 };
 
 }
