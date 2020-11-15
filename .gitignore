@@ -3,3 +3,4 @@ ramulator
 ramulator_*
 *.pdf
 *.stats
+*.stats.bak

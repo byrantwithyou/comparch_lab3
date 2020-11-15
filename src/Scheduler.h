@@ -248,15 +248,15 @@ private:
         [this](ReqIter req1, ReqIter req2) {
             bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
             bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
-            if ((req1->arrive - this->ctrl->clk > 100000) && ready1)
+            if ((req1->arrive - this->ctrl->clk > 100000) && ctrl->is_ready(req1))
                 return req1;
-            if ((req2->arrive - this->ctrl->clk > 100000) && ready2)
+            if ((req2->arrive - this->ctrl->clk > 100000) && ctrl->is_ready(req2))
                 return req2;
             if (req1->coreid != req2->coreid)
             {
-                if ((total_as[req1->coreid] > total_as[req2->coreid]) && ready2)
+                if ((total_as[req1->coreid] > total_as[req2->coreid]) && ctrl->is_ready(req2))
                     return req2;
-                if (ready1)return req1;
+                if (ctrl->is_ready(req1))return req1;
             }
             if (ready1 ^ ready2)
             {
@@ -272,14 +272,15 @@ private:
         [this](ReqIter req1, ReqIter req2) {
             bool inblacklist1 = std::find(this->blacklist.begin(), this->blacklist.end(), req1->coreid) != this->blacklist.end();
             bool inblacklist2 = std::find(this->blacklist.begin(), this->blacklist.end(), req2->coreid) != this->blacklist.end();
-            if (inblacklist1 ^ inblacklist2)
-            {
-                if (inblacklist1)
-                    return req2;
-                return req1;
-            }
             bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
             bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
+            if (inblacklist1 ^ inblacklist2)
+            {
+                if (inblacklist1 && this->ctrl->is_ready(req2))
+                    return req2;
+                if (this->ctrl->is_ready(req1))
+                return req1;
+            }
             if (ready1 ^ ready2)
             {
                 if (ready1)
