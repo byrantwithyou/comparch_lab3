@@ -3,4 +3,4 @@ ramulator
 *.pdf
 *.stats
 test.sh
-inst_*
+*.ignore
