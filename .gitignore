@@ -3,3 +3,4 @@ ramulator
 *.pdf
 *.stats
 test.sh
+compile.sh
