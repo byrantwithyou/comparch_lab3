@@ -2,3 +2,5 @@ obj/
 ramulator
 *.pdf
 *.stats
+test.sh
+inst_*
