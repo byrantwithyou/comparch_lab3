@@ -85,7 +85,7 @@ public:
         ATLAS,
         BLISS,
         MAX
-    } type = Type::ATLAS; //Change this line to change scheduling policy
+    } type = Type::BLISS; //Change this line to change scheduling policy
 
     long cap = 16; //Change this line to change cap
 
@@ -94,7 +94,7 @@ public:
     list<Request>::iterator get_head(list<Request> &q)
     {
         // TODO make the decision at compile time
-        if (type != Type::FRFCFS_PriorHit || type != Type::ATLAS || type != Type::BLISS)
+        if (type != Type::FRFCFS_PriorHit && type != Type::ATLAS && type != Type::BLISS)
         {
             //If queue is empty, return end of queue
             if (!q.size())

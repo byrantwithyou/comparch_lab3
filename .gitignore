@@ -1,6 +1,5 @@
 obj/
 ramulator
+ramulator_*
 *.pdf
 *.stats
-test.sh
-compile.sh
