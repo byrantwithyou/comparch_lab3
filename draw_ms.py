@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-max_slowdown = np.loadtxt('cycles.stats', delimiter=',') / 6938751.0
+max_slowdown = np.loadtxt('cycles_final.stats', delimiter=',')
  
 # set width of bar
 barWidth = 0.18
