@@ -6,3 +6,5 @@ ramulator_*
 *.stats.bak
 *.aux
 *.log
+cpu.trace
+.trace
